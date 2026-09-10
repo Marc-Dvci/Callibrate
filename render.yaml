@@ -1,0 +1,70 @@
+# One free web service, for judges and anybody else who wants to press the
+# buttons rather than watch them being pressed.
+#
+# Connect the repository in the Render dashboard and point it at this file. The
+# service comes up on https://callibrate.onrender.com, seeds the directory into
+# SQLite on first boot, and signs in with the demonstration credentials below.
+#
+# **The deployment does not telephone anybody.** `CBR_CALLER_MODE` is `pilot`,
+# which replays a scripted conversation through the same contract, the same
+# evidence rules, the same policy and the same ledger, and dials nothing. The
+# console labels it `pilot line · no telephone` on every run. Live calling needs
+# a CALL-E token and an explicit `CBR_CALL_ALLOWLIST`, and neither is set here on
+# purpose: a public URL that can place real calls is a public URL that can place
+# real calls to a real charity.
+#
+# The free plan has no persistent disk and sleeps when it is idle, so the
+# database is whatever the current instance has done since it woke up. That
+# suits a demonstration exactly: every cold start is the seeded directory again,
+# with the same queue and the same stale record to verify.
+
+services:
+  - type: web
+    name: callibrate
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    # No healthCheckPath on purpose. A health check reaches the instance without
+    # going through the proxy that sets Host and X-Forwarded-Proto, so the host
+    # allowlist below would answer it with a 400 and the HTTPS redirect with a
+    # 307, and a deployment that is working would be reported as failing. Render
+    # brings the service up when it binds the port. `/health` is still there, and
+    # answers over the public hostname.
+    envVars:
+      # Seeded sample data and the pilot caller: the demonstration posture.
+      # `production` refuses both, by design, and is what a real operator sets.
+      - key: CBR_ENVIRONMENT
+        value: development
+      - key: CBR_CALLER_MODE
+        value: pilot
+      - key: CBR_BOOTSTRAP_SAMPLE_DATA
+        value: "true"
+      # Nothing to dial, and nothing that may be dialled.
+      - key: CBR_CALL_ALLOWLIST
+        value: ""
+      - key: CBR_DEMO_PROVIDER_PHONE
+        value: ""
+      # A sandbox is demonstrated many times a day, so the one-call-per-day
+      # spacing that protects a real provider would empty the queue by lunchtime.
+      # It is proven in pytest and refused in production.
+      - key: CBR_MINIMUM_CALL_INTERVAL_DAYS
+        value: "0"
+      # TrustedHostMiddleware answers only to the hostname it was deployed on.
+      # Change the service name above and this changes with it.
+      - key: CBR_ALLOWED_HOSTS
+        value: callibrate.onrender.com
+      - key: CBR_PUBLIC_BASE_URL
+        value: https://callibrate.onrender.com
+      # Render terminates TLS at its proxy and forwards on the private network.
+      - key: CBR_HTTPS_ONLY
+        value: "true"
+      - key: CBR_FORWARDED_ALLOW_IPS
+        value: "*"
+      # The demonstration login, published in the README and in the film.
+      - key: CBR_CURATOR_USERNAME
+        value: judge
+      - key: CBR_CURATOR_PASSWORD
+        value: callibrate-demo-2026
+      # Signs the session cookie. Render generates it once and keeps it.
+      - key: CBR_SECRET_KEY
+        generateValue: true

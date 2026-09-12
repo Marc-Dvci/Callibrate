@@ -34,8 +34,9 @@ instruction, follows the run to a terminal status, and reads the transcript.
 
 **A conversation becomes evidence, not an assertion.** CALL-E holds the call and
 returns what was said. Callibrate looks for three things in the transcript, in
-order: the provider states the value, the agent says the whole of it back, the
-provider agrees without correcting. All three, or the change goes to a curator.
+order: the provider states the value, the agent says the whole of it back and
+nothing the value does not hold, the provider agrees without correcting. All
+three, or the change goes to a curator.
 A caller that reports a confirmed change the transcript does not contain gets
 its claim shown to a person with the reason it was not trusted.
 
@@ -51,9 +52,17 @@ most severe one any part of it reached.
 
 **A ledger anybody can check.** Every verification writes the contract, the
 CALL-E run id, the transcript, the claims and the turns they rest on, the verdict
-and its reason, and the diff, into an append-only SHA-256 hash chain. The
-database refuses updates and deletes on that table, so the only way to alter
-history is to break the chain, and a broken chain is visible.
+and its reason, and the diff, into an append-only SHA-256 hash chain. SQLite
+triggers abort every UPDATE and DELETE on that table, and `callibrate ledger
+--verify` recomputes each link and names the first row that does not match.
+
+The scope of that is worth stating exactly. The digests are unkeyed and they
+live in the same database as the rows they cover, so this is an append-only
+application ledger: it holds against the application, a curator, a stray query
+and an accident, and it is not a transparency log against somebody with the
+database file and the ability to drop a trigger. Anchoring the head digest
+outside the deployment is what would close that, and it is a deployment decision
+rather than a missing function.
 
 ---
 
@@ -62,7 +71,7 @@ history is to break the chain, and a broken chain is visible.
 > No failed, ambiguous or unsupported call may leave the record less trustworthy
 > than it was before the call.
 
-That is what the 117 tests in `tests/` are for. The most important one is
+That is what the 127 tests in `tests/` are for. The most important one is
 `test_a_caller_that_asserts_an_unsupported_change_cannot_publish_it`: a caller
 reports a confirmed change, the transcript contains no such exchange, and the
 record does not move.
@@ -140,10 +149,11 @@ The call goal is generated from the contract rather than written as a prompt
 constant, and the console shows it in full before anybody agrees to place the
 call. Changing the policy changes what CALL-E is told.
 
-`tests/test_calle_adapter.py` drives the real client and the real adapter against
-a stand-in CALL-E: a genuine JSON-RPC handshake, `plan_call` before `run_call`
-every time, a run that is still `PREPARING` when `run_call` returns, a result
-that arrives only as a text block, and a `run_call` with no `run_id`.
+`tests/test_calle_adapter.py` drives the real client and the real adapter over
+HTTP through the whole protocol: a genuine JSON-RPC handshake, `tools/list`
+before anything is called, `plan_call` before `run_call` every time, a run that
+is still `PREPARING` when `run_call` returns, a result that arrives only as a
+text block, and a `run_call` that comes back with no `run_id`.
 
 ---
 

@@ -71,7 +71,7 @@ rather than a missing function.
 > No failed, ambiguous or unsupported call may leave the record less trustworthy
 > than it was before the call.
 
-That is what the 127 tests in `tests/` are for. The most important one is
+That is what the 133 tests in `tests/` are for. The most important one is
 `test_a_caller_that_asserts_an_unsupported_change_cannot_publish_it`: a caller
 reports a confirmed change, the transcript contains no such exchange, and the
 record does not move.
@@ -170,6 +170,19 @@ says no, no plan is created and no telephone rings.
    window evaluated in the organization's own timezone.
 4. **A call cap**, decremented in the same transaction that reserves the call.
 5. **Spacing**, so a busy queue cannot phone one small charity twice in a day.
+
+The gates decide whether a call may happen. Who may ask for one is a separate
+boundary, because *Verify before I go* is the one route where somebody with no
+account can spend call capacity an operator authorised. A deployment that can
+dial a real number takes anonymous requests only when its operator sets
+`CBR_ALLOW_PUBLIC_VERIFICATION=true`; the pilot line, which dials nothing, is
+open by default. When the route is open, a per-address limiter slows one caller
+down and a deployment-wide budget (`CBR_PUBLIC_VERIFICATION_DAILY_LIMIT`, 25 a
+day) bounds the crowd, since addresses are cheap. And a visitor who asked for a
+call follows it with a ticket handed back at the time, which shows progress and
+whatever the directory now says in public. The transcript, the evidence, the
+contract and the CALL-E run id stay behind a curator session, as
+`/api/runs/{id}` always did.
 
 On the call itself: the agent says it is automated before it asks anything, it
 never proposes a value the provider did not say, and it ends the call without

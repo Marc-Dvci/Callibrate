@@ -48,7 +48,7 @@ which direction it moved in.
 ## The test suite
 
 ```bash
-pytest -q          # 127 tests
+pytest -q          # 133 tests
 ruff check .
 ```
 
@@ -61,7 +61,7 @@ Grouped by what they defend:
 | `test_call_eligibility.py` | 15 | A call is placed that was not permitted |
 | `test_calle_adapter.py` | 19 | The CALL-E integration mishandles a run |
 | `test_workflow.py` | 13 | A failed call leaves the record or the queue half changed |
-| `test_api_and_ledger.py` | 16 | The console leaks, or the ledger can be edited |
+| `test_api_and_ledger.py` | 22 | The console leaks, a visitor sees a call they did not ask for, or the ledger can be edited |
 | `test_contract_library.py` | 7 | The primitive turns out to be HSDS-shaped after all |
 
 Three of them are worth naming.
